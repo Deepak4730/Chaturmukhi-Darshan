@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e2dfeb">
+  <meta name="description" content="Chaturmukhi Darshan: In the light of Acharyas. A fusion of Hindu and Western philosophies.">
+  <title>Chaturmukhi Darshan | In the light of Acharyas</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #e2dfeb;
+      --surface: #f2f1f5;
+      --surface-raised: rgba(247, 245, 252, .56);
+      --surface-soft: #dcdae2;
+      --text: #2b2a30;
+      --muted: #5f5d68;
+      --faint: #77747f;
+      --border: rgba(80, 78, 92, .16);
+      --border-strong: rgba(80, 78, 92, .27);
+      --accent: #5a5864;
+      --accent-soft: #d5d3dc;
+      --focus: #5f5c70;
+      --shadow: 0 12px 38px rgba(40, 38, 50, .07);
+      --dot-opacity: 1;
+      --card-hover: rgba(250, 249, 254, .72);
+      --neb-glow: rgba(255, 255, 255, .78);
+      --neb-mid: rgba(168, 160, 192, .55);
+      --neb-deep: rgba(132, 124, 160, .58);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #1f1d26;
+      --surface: #2e2c32;
+      --surface-raised: rgba(44, 41, 54, .50);
+      --surface-soft: #38363e;
+      --text: #e7e5eb;
+      --muted: #c0bdc9;
+      --faint: #a3a0ad;
+      --border: rgba(224, 221, 234, .13);
+      --border-strong: rgba(224, 221, 234, .24);
+      --accent: #cfccda;
+      --accent-soft: #46434e;
+      --focus: #cfcbe0;
+      --shadow: 0 16px 46px rgba(8, 7, 10, .22);
+      --dot-opacity: 1;
+      --card-hover: rgba(54, 50, 66, .66);
+      --neb-glow: rgba(128, 118, 160, .42);
+      --neb-mid: rgba(84, 76, 110, .50);
+      --neb-deep: rgba(8, 7, 14, .66);
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 112.5%; scroll-behavior: smooth; scroll-padding-top: 120px; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Times New Roman", Times, serif;
+      line-height: 1.65;
+      transition: background-color .35s ease, color .35s ease;
+    }
+    body, button, input { font-family: "Times New Roman", Times, serif; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    a { color: inherit; }
+    button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--focus); outline-offset: 4px;
+    }
+    ::selection { background: var(--accent-soft); color: var(--text); }
+
+    /* Soft gray nebula, a gentle echo of a night sky. Decorative only. */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 62% 42% at 94% 6%, var(--neb-glow), transparent 72%),
+        radial-gradient(ellipse 52% 38% at 84% 52%, var(--neb-mid), transparent 74%),
+        radial-gradient(ellipse 46% 34% at 52% 18%, var(--neb-mid), transparent 76%),
+        radial-gradient(ellipse 48% 36% at 12% 32%, var(--neb-deep), transparent 74%),
+        radial-gradient(ellipse 56% 38% at 30% 82%, var(--neb-deep), transparent 74%),
+        radial-gradient(ellipse 40% 30% at 92% 92%, var(--neb-mid), transparent 74%);
+      transition: opacity .35s ease;
+    }
+    /* Quiet, decorative floating dots. They never cover or intercept content. */
+    #floating-dots {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+      contain: strict; opacity: var(--dot-opacity); transition: opacity .35s ease;
+    }
+    #floating-dots canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .site-shell { position: relative; z-index: 1; }
+    .wrap { width: min(100% - 40px, 920px); margin-inline: auto; }
+
+    .site-header {
+      position: sticky; top: 0; z-index: 10;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    }
+    .header-inner { min-height: 96px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { text-decoration: none; display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
+    .brand-mark {
+      width: 46px; height: 46px; border: 1px solid var(--border-strong); border-radius: 50%;
+      display: grid; place-items: center; flex: 0 0 auto; color: var(--accent);
+      font-family: "Times New Roman", Times, serif; font-size: 25px; font-weight: 700; line-height: 1;
+    }
+    .brand-name { font-family: "Times New Roman", Times, serif; font-size: clamp(1.7rem, 4.6vw, 2.75rem); font-weight: 900; line-height: 1.05; letter-spacing: -.03em; white-space: nowrap; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .nav { display: flex; align-items: center; gap: 5px; }
+    .nav a, .nav button { font-size: .88rem; color: var(--muted); text-decoration: none; padding: 9px 12px; border: 0; background: transparent; border-radius: 999px; cursor: pointer; }
+    .nav a:hover, .nav button:hover { color: var(--text); background: var(--surface-soft); }
+    .icon-button {
+      display: inline-grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto;
+      border: 1px solid var(--border); background: var(--surface-raised); border-radius: 50%; cursor: pointer;
+      transition: background .2s ease, transform .2s ease, border-color .2s ease;
+    }
+    .icon-button:hover { background: var(--surface-soft); border-color: var(--border-strong); transform: translateY(-1px); }
+    .icon-button svg { width: 19px; height: 19px; }
+    .menu-toggle { display: none; }
+
+    main { padding-top: 34px; padding-bottom: 40px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: var(--muted); font-size: .72rem; font-weight: 650; text-transform: uppercase; letter-spacing: .16em; }
+    .eyebrow::before { content: ""; display: block; width: 21px; height: 1px; background: var(--faint); }
+    h1, h2, h3, p { margin-top: 0; }
+
+    /* Deliberately one card per row on every screen size. */
+    .post-list { display: flex; flex-direction: column; gap: 17px; }
+    .post-card {
+      display: flex; flex-direction: column; align-items: stretch; gap: 20px;
+      min-height: 250px; padding: clamp(22px, 4vw, 34px);
+      border: 1px solid var(--border); border-radius: 22px;
+      background: var(--surface-raised); box-shadow: var(--shadow);
+      transition: transform .24s ease, background-color .24s ease, border-color .24s ease, box-shadow .24s ease;
+    }
+    .post-card:hover { transform: translateY(-2px); background: var(--card-hover); border-color: var(--border-strong); box-shadow: 0 16px 42px rgba(40, 32, 54, .09); }
+    .post-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .post-category { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .post-number { color: var(--faint); font-size: .78rem; font-variant-numeric: tabular-nums; }
+    .post-copy { max-width: 740px; }
+    .post-title { margin: 0 0 10px; font: 700 clamp(1.65rem, 4vw, 2.35rem)/1.17 "Times New Roman", Times, serif; letter-spacing: -.02em; }
+    .post-title button { font: inherit; letter-spacing: inherit; text-align: left; border: 0; padding: 0; color: inherit; background: none; cursor: pointer; }
+    .post-title button:hover { color: var(--muted); }
+    .post-excerpt { color: var(--muted); font-size: .96rem; line-height: 1.85; margin: 0; max-width: 680px; }
+    .post-bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: auto; padding-top: 2px; }
+    .post-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--faint); font-size: .8rem; }
+    .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
+    .post-actions { display: flex; align-items: center; gap: 8px; }
+    .read-button, .share-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 999px; border: 1px solid var(--border-strong); padding: 10px 15px;
+      font-size: .83rem; font-weight: 600; text-decoration: none; background: transparent; color: var(--text); cursor: pointer;
+      transition: background .2s ease, border-color .2s ease, transform .2s ease;
+    }
+    .read-button { background: var(--surface-soft); }
+    .read-button:hover, .share-button:hover { border-color: var(--faint); transform: translateY(-1px); }
+    .read-button svg, .share-button svg { width: 16px; height: 16px; }
+    .share-button { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+    .empty-state { padding: 40px 22px; text-align: center; color: var(--muted); border: 1px dashed var(--border-strong); border-radius: 18px; }
+
+    .about-section { margin-top: 78px; padding: clamp(25px, 5vw, 42px); border: 1px solid var(--border); border-radius: 22px; background: color-mix(in srgb, var(--surface) 45%, transparent); }
+    .about-section h2 { font: 700 clamp(1.7rem, 4vw, 2.2rem)/1.2 "Times New Roman", Times, serif; letter-spacing: -.02em; margin: 13px 0; }
+    .about-section p { color: var(--muted); max-width: 680px; margin-bottom: 0; line-height: 1.9; }
+    footer { margin-top: 60px; padding: 25px 0 35px; border-top: 1px solid var(--border); }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .footer-brand { font: 700 1.1rem "Times New Roman", Times, serif; }
+    .footer-note, .footer-links { font-size: .8rem; color: var(--faint); }
+    .footer-links { display: flex; gap: 15px; }
+    .footer-links a { color: inherit; text-decoration: none; }
+    .footer-links a:hover { color: var(--text); }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 50; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; padding: 11px 17px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border-strong); box-shadow: var(--shadow); border-radius: 999px; font-size: .86rem; transition: opacity .2s ease, transform .2s ease; backdrop-filter: blur(16px); }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    dialog {
+      width: min(760px, calc(100% - 28px)); max-width: none; max-height: min(88dvh, 900px); padding: 0;
+      border: 1px solid var(--border-strong); border-radius: 24px; background: var(--surface); color: var(--text);
+      box-shadow: 0 30px 100px rgba(12, 8, 18, .32); overflow: auto;
+    }
+    dialog::backdrop { background: rgba(22, 18, 29, .48); backdrop-filter: blur(5px); }
+    .reader-header { position: sticky; top: 0; z-index: 2; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: color-mix(in srgb, var(--surface) 91%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+    .reader-label { color: var(--muted); text-transform: uppercase; font-weight: 700; font-size: .71rem; letter-spacing: .13em; }
+    .reader-body { padding: clamp(25px, 6vw, 52px); }
+    .reader-body h2 { font: 700 clamp(2.1rem, 6vw, 3.5rem)/1.08 "Times New Roman", Times, serif; letter-spacing: -.02em; margin: 10px 0 18px; }
+    .reader-deck { font-size: 1.08rem; color: var(--muted); line-height: 1.8; margin: 0 0 26px; }
+    .reader-meta { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; color: var(--faint); font-size: .81rem; margin-bottom: 28px; }
+    .reader-content { font-family: "Times New Roman", Times, serif; font-size: 1.12rem; line-height: 1.95; }
+    .reader-content p { margin-bottom: 1.35em; }
+    .reader-content h3 { font: 700 1.28rem/1.35 "Times New Roman", Times, serif; margin: 1.8em 0 .65em; }
+    .reader-content blockquote { padding-left: 18px; margin: 1.5em 0; border-left: 2px solid var(--border-strong); color: var(--muted); }
+    .reader-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 22px; margin-top: 34px; }
+
+
+    /* Full-screen reader: only the sky behind, then the text. */
+    body.reading { overflow: hidden; }
+    body.reading .site-shell { visibility: hidden; }
+    body.reading #floating-dots { opacity: .5; }
+    dialog#article-dialog {
+      position: fixed; inset: 0; margin: 0; width: 100vw; height: 100dvh;
+      max-width: none; max-height: none; border: 0; border-radius: 0;
+      background: transparent; box-shadow: none; color: var(--text);
+    }
+    dialog#article-dialog::backdrop { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    #article-dialog .reader-header {
+      background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+      border-bottom: 0; padding: 18px clamp(16px, 4vw, 40px);
+    }
+    #article-dialog .reader-label { font-size: .8rem; }
+    #article-dialog .reader-body {
+      max-width: 820px; margin: 0 auto; padding: clamp(8px, 2vw, 24px) clamp(22px, 5vw, 40px) 90px;
+    }
+    #article-dialog .reader-body .post-category { font-size: .85rem; letter-spacing: .16em; }
+    #article-dialog .reader-body h2 {
+      font-size: clamp(2.5rem, 7.2vw, 4.9rem); line-height: 1.06; font-weight: 700;
+      letter-spacing: -.015em; margin: 14px 0 22px;
+    }
+    #article-dialog .reader-deck { font-size: clamp(1.3rem, 1.1rem + 1vw, 1.65rem); font-style: italic; line-height: 1.55; color: var(--muted); margin-bottom: 22px; }
+    #article-dialog .reader-meta { font-size: 1rem; margin-bottom: 36px; }
+    #article-dialog .reader-content { font-size: clamp(1.28rem, 1.1rem + .7vw, 1.55rem); line-height: 1.8; color: var(--text); }
+    #article-dialog .reader-content p { margin-bottom: 1.25em; }
+    #article-dialog .reader-content h3 { font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem); margin: 1.7em 0 .6em; }
+    #article-dialog .reader-content blockquote { font-size: 1.12em; font-style: italic; padding-left: 22px; border-left-width: 3px; }
+    #article-dialog .reader-footer { margin-top: 44px; }
+
+    @media (max-width: 680px) {
+      .wrap { width: min(100% - 28px, 920px); }
+      .header-inner { min-height: 84px; gap: 10px; }
+      .brand-mark { width: 38px; height: 38px; font-size: 21px; }
+      .brand-name { white-space: normal; font-size: clamp(1.5rem, 7vw, 1.85rem); line-height: 1.05; }
+      .nav { display: none; position: absolute; top: calc(100% + 1px); left: 0; right: 0; padding: 12px 14px 15px; border-bottom: 1px solid var(--border); background: var(--bg); flex-direction: column; align-items: stretch; box-shadow: var(--shadow); }
+      .nav.open { display: flex; }
+      .nav a { padding: 11px 13px; }
+      .menu-toggle { display: inline-grid; }
+        .post-list { gap: 13px; }
+      .post-card { min-height: 245px; border-radius: 19px; padding: 23px 20px; gap: 18px; }
+      .post-title { font-size: clamp(1.65rem, 7.5vw, 2.1rem); }
+      .post-excerpt { font-size: .92rem; }
+      .post-bottom { align-items: flex-end; }
+      .post-meta { max-width: 60%; gap: 7px; }
+      .post-actions { flex-shrink: 0; }
+      .read-button { padding: 10px 12px; }
+      .about-section { margin-top: 55px; }
+      .footer-inner { align-items: flex-start; }
+    }
+    @media (max-width: 390px) {
+      .brand-name { font-size: 1.4rem; }
+      .brand-mark { width: 34px; height: 34px; font-size: 19px; }
+      .post-card { padding: 20px 17px; }
+      .post-bottom { gap: 8px; }
+      .post-meta { font-size: .73rem; }
+      .read-button { font-size: .78rem; padding: 9px 10px; }
+      .share-button { width: 38px; height: 38px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="floating-dots" aria-hidden="true"></div>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="#home" aria-label="Chaturmukhi Darshan home">
+          <span class="brand-mark" aria-hidden="true">च</span>
+          <span class="brand-name">Chaturmukhi Darshan</span>
+        </a>
+        <div class="header-actions">
+          <nav class="nav" id="primary-nav" aria-label="Main navigation">
+            <a href="#home">Home</a>
+            <a href="#writings">All writings</a>
+            <a href="#about">About</a>
+          </nav>
+          <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch theme">
+            <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+          </button>
+          <button class="icon-button menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-nav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="home" class="wrap">
+      <section id="writings">
+        <div class="post-list" id="post-list" aria-live="polite"></div>
+      </section>
+
+      <section id="about" class="about-section" aria-labelledby="about-heading">
+        <span class="eyebrow">About this space</span>
+        <h2 id="about-heading">Many perspectives. A deeper inquiry.</h2>
+        <p>Chaturmukhi Darshan is a space for thoughtful encounters between Hindu philosophical traditions and Western thought. It approaches the questions that have followed us across centuries with curiosity, care, and respect for the thinkers who came before us.</p>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap footer-inner">
+        <div>
+          <div class="footer-brand">Chaturmukhi Darshan</div>
+          <div class="footer-note">In the light of Acharyas.</div>
+        </div>
+        <div class="footer-links"><a href="#home">Back to top ↑</a><a href="#writings">Writings</a><a href="#about">About</a></div>
+        <div class="footer-note">© <span id="year"></span> Chaturmukhi Darshan</div>
+      </div>
+    </footer>
+  </div>
+
+  <dialog id="article-dialog" aria-labelledby="reader-title">
+    <div class="reader-header">
+      <span class="reader-label">Chaturmukhi Darshan · Essay</span>
+      <button class="icon-button" id="close-reader" type="button" aria-label="Close article">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <article class="reader-body">
+      <div class="post-category" id="reader-category"></div>
+      <h2 id="reader-title"></h2>
+      <p class="reader-deck" id="reader-deck"></p>
+      <div class="reader-meta" id="reader-meta"></div>
+      <div class="reader-content" id="reader-content"></div>
+      <div class="reader-footer">
+        <span class="footer-note">In the light of Acharyas.</span>
+        <button class="share-button" id="reader-share" type="button" aria-label="Share this essay" title="Share essay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4"/></svg>
+        </button>
+      </div>
+    </article>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const root = document.documentElement;
+      const dotField = document.getElementById('floating-dots');
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = document.getElementById('theme-icon');
+      const menuToggle = document.getElementById('menu-toggle');
+      const nav = document.getElementById('primary-nav');
+      const postList = document.getElementById('post-list');
+            const dialog = document.getElementById('article-dialog');
+      const toast = document.getElementById('toast');
+      let activeArticle = null;
+      let toastTimer;
+      let rafId = 0;
+      let resizeTimer;
+
+      const articles = [
+        {
+          id: 'nature-of-self', number: '01', category: 'Vedanta', date: 'A question to return to', minutes: 5,
+          title: 'The nature of the self',
+          excerpt: 'When we ask who we are, are we asking about the body, the mind, the story we tell, or the awareness in which each appears?',
+          deck: 'A starting point for thinking about identity through Hindu traditions and the wider history of philosophy.',
+          content: `<p>“Who am I?” sounds like a simple question until we stay with it. The names we carry, the roles we perform, and the memories we collect all tell us something about ourselves. Yet each can change. Which part of us, if any, remains through that change?</p><h3>The layers of identity</h3><p>In several Hindu philosophical traditions, inquiry into the self is not merely a search for a better description of the personality. It can become a careful examination of what we take to be the one who experiences, thinks, remembers, and acts. Different schools answer this question differently, and their disagreements are as important as their shared questions.</p><p>Western philosophy offers its own long conversation about personal identity, consciousness, and the continuity of a person over time. Some approaches emphasize memory and psychological continuity; others ask what it means for experience to belong to a subject at all.</p><h3>A question, not a slogan</h3><p>Bringing these traditions into conversation should not erase their differences. The words may sound familiar while carrying different assumptions. A useful comparison begins by listening closely, asking what each thinker means, and resisting the urge to make one tradition fit neatly into another.</p><blockquote>Philosophical inquiry begins when a familiar answer becomes a genuine question.</blockquote><p>Perhaps the first step is not to settle the self once and for all, but to notice how much is hidden inside the question. From there, the inquiry can begin with humility.</p>`
+        },
+        {
+          id: 'reason-and-revelation', number: '02', category: 'Western philosophy', date: 'Knowledge & belief', minutes: 6,
+          title: 'Reason and revelation',
+          excerpt: 'Can reason and spiritual insight illuminate the same question, or do they begin from ways of knowing that cannot be reduced to one another?',
+          deck: 'Considering what counts as knowledge, and how different traditions justify the truths they hold.',
+          content: `<p>Human beings do not arrive at their deepest convictions by a single road. We reason, observe, remember, inherit, trust, and sometimes describe an insight as revelatory. Philosophy asks how these ways of knowing relate, and when each deserves our confidence.</p><h3>What can reason establish?</h3><p>Reason helps us test consistency, examine evidence, and uncover assumptions. It can show that two claims conflict or that a conclusion does not follow from its premises. But reasoning also begins somewhere: with concepts, experiences, and standards that may themselves need examination.</p><p>Religious and philosophical traditions may give a special role to authoritative teachings, contemplative experience, or the testimony of a trusted teacher. The meaning and status of these sources differ across traditions. They should neither be accepted without thought nor dismissed before being understood.</p><h3>Conversation without flattening</h3><p>A real dialogue does not require every method to become identical. It asks what each method can reveal, what limits it may have, and how claims can be evaluated fairly. Careful reasoning can clarify a spiritual claim; a spiritual tradition can raise questions that a purely abstract argument has overlooked.</p><p>The task is not to declare a winner in advance. It is to become more precise about what we know, why we believe it, and what remains open.</p>`
+        },
+        {
+          id: 'meaning-of-freedom', number: '03', category: 'Ethics & life', date: 'Agency & responsibility', minutes: 4,
+          title: 'The meaning of freedom',
+          excerpt: 'Freedom may mean doing what we want. It may also mean understanding our wants, mastering our impulses, and choosing with greater clarity.',
+          deck: 'A reflection on freedom as choice, self-knowledge, and responsibility.',
+          content: `<p>Freedom is often imagined as the absence of obstacles: the ability to do what we wish, go where we choose, and shape our lives without interference. This matters. Yet a further question follows: are we free whenever we follow a desire, even when that desire controls us?</p><p>Philosophical traditions have explored freedom as a matter of external conditions, rational agency, self-discipline, and release from ignorance. These are not interchangeable meanings. Each brings a different picture of what a freer life might require.</p><h3>Choice and self-understanding</h3><p>A person can have many options and still feel ruled by habit, fear, or the need for approval. Reflection does not remove every constraint, but it can make our choices less automatic. We begin to see which desires express our considered values and which simply demand immediate satisfaction.</p><p>Freedom, then, may be both a condition we seek in the world and a capacity we cultivate within ourselves. Neither side makes the other unnecessary. Inner clarity cannot excuse injustice, and external opportunity alone cannot guarantee wise action.</p>`
+        },
+        {
+          id: 'what-is-truth', number: '04', category: 'Western philosophy', date: 'Knowing & understanding', minutes: 5,
+          title: 'What does it mean to know the truth?',
+          excerpt: 'Truth is not always the same as certainty. Explore the difference between believing something, having reasons for it, and knowing it.',
+          deck: 'An introduction to the questions that sit beneath everyday claims of knowledge.',
+          content: `<p>We use the word “know” with ease. We say we know a person, a fact, a place, or ourselves. But what changes when someone asks us to explain how we know? Confidence alone is not enough: we can be certain and mistaken.</p><p>Philosophers have proposed different accounts of truth and knowledge. Some focus on how a statement relates to reality; others investigate justification, reliable methods, experience, or the limits of human understanding. No brief formula settles every debate.</p><h3>Reasons matter</h3><p>To examine a belief is to ask what supports it, whether that support is relevant, and what might count against it. This is not a demand to doubt everything forever. It is a way to distinguish careful confidence from mere conviction.</p><p>Comparative philosophy adds another responsibility: terms such as truth, knowledge, perception, and reality may not carry exactly the same role in every tradition. Translation can open a door, but it can also hide a difference.</p><p>A patient search for truth does not promise instant certainty. It offers something more durable: better questions, clearer reasons, and a willingness to revise a view when the evidence calls for it.</p>`
+        },
+        {
+          id: 'art-of-dialogue', number: '05', category: 'Vedanta', date: 'Tradition & interpretation', minutes: 4,
+          title: 'The art of philosophical dialogue',
+          excerpt: 'A meeting between traditions is not a contest to be won. It is a practice of listening closely, comparing carefully, and allowing questions to deepen.',
+          deck: 'How to bring different schools of thought into conversation without erasing what makes each distinct.',
+          content: `<p>Comparison can be illuminating, but it can also become careless. When two traditions use similar words, we may assume they mean the same thing. When they reach different conclusions, we may decide that one must have misunderstood the other. Both habits close inquiry too soon.</p><h3>Listen before comparing</h3><p>Good dialogue begins with each view in its own setting. What problem is a thinker trying to solve? Which concepts are central? What counts as evidence or a good argument within that approach? Only after these questions are taken seriously can a comparison become meaningful.</p><p>Dialogue also needs room for disagreement. Respect is not the same as agreement, and understanding a position does not require accepting it. Sometimes the most useful outcome is discovering that a shared word hides a deep difference.</p><p>When approached with patience, comparison can sharpen both sides. Each tradition becomes more visible, not less, and the reader learns to move between perspectives without pretending they are identical.</p>`
+        },
+        {
+          id: 'living-wisely', number: '06', category: 'Ethics & life', date: 'Philosophy in practice', minutes: 3,
+          title: 'What does it mean to live wisely?',
+          excerpt: 'Wisdom may begin where information ends: in the effort to see clearly, act thoughtfully, and understand what a good life asks of us.',
+          deck: 'A brief reflection on bringing philosophical questions into ordinary life.',
+          content: `<p>It is possible to know many things and still struggle to live well. Information can expand our understanding, but wisdom asks how understanding should shape our attention, choices, and conduct.</p><p>Different philosophical traditions offer different accounts of a good life. Some emphasize virtue and practical judgment; others give special weight to insight, disciplined action, compassion, or freedom from mistaken identification. Their differences deserve careful attention.</p><h3>Thought made practical</h3><p>Wisdom is not simply collecting inspiring statements. It involves noticing the details of a situation, being honest about our motives, considering how our actions affect others, and accepting that judgment sometimes requires patience.</p><p>There may be no single recipe for living wisely. Still, we can practice the habits that make wiser action more likely: attention, reflection, humility, and a willingness to learn from consequences.</p>`
+        }
+      ];
+
+      const icons = {
+        arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>',
+        share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4"/></svg>'
+      };
+
+      function makeDots() {
+        cancelAnimationFrame(rafId);
+        dotField.replaceChildren();
+        const canvas = document.createElement('canvas');
+        dotField.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const W = window.innerWidth, H = window.innerHeight;
+        canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+        ctx.scale(dpr, dpr);
+        const count = Math.round(Math.min(900, Math.max(180, (W * H) / 1700)));
+        const stars = [];
+        for (let i = 0; i < count; i++) {
+          const r = Math.random();
+          // mostly tiny pin-pricks, some medium, a few larger glowing ones
+          const size = r < 0.72 ? 0.5 + Math.random() * 0.7 : r < 0.95 ? 1.2 + Math.random() * 0.8 : 2 + Math.random() * 1.3;
+          stars.push({
+            x: Math.random() * W, y: Math.random() * H, size,
+            big: size > 1.9, tint: Math.random(),
+            vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 3.5,
+            base: 0.4 + Math.random() * 0.55,
+            speed: 0.25 + Math.random() * 0.6, phase: Math.random() * 6.28
+          });
+        }
+        function color(star, dark) {
+          // dark theme: light purples; light theme: deeper purples. No white.
+          if (dark) return star.tint < 0.4 ? '196,170,245' : star.tint < 0.75 ? '176,148,235' : '214,190,250';
+          return star.tint < 0.4 ? '104,70,172' : star.tint < 0.75 ? '124,90,190' : '88,56,150';
+        }
+        let last = performance.now();
+        function frame(now) {
+          const dt = Math.min((now - last) / 1000, 0.05); last = now;
+          const dark = root.dataset.theme === 'dark';
+          ctx.clearRect(0, 0, W, H);
+          for (const st of stars) {
+            if (!reduced) {
+              st.x += st.vx * dt; st.y += st.vy * dt;
+              if (st.x < -4) st.x = W + 4; else if (st.x > W + 4) st.x = -4;
+              if (st.y < -4) st.y = H + 4; else if (st.y > H + 4) st.y = -4;
+            }
+            const tw = reduced ? 1 : 0.72 + 0.28 * Math.sin(now / 1000 * st.speed + st.phase);
+            const a = Math.min(1, st.base * tw);
+            const c = color(st, dark);
+            if (st.big) {
+              const g = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.size * 4);
+              g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`);
+              ctx.fillStyle = g;
+              ctx.beginPath(); ctx.arc(st.x, st.y, st.size * 4, 0, 6.2832); ctx.fill();
+            }
+            ctx.fillStyle = `rgba(${c},${a})`;
+            ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, 6.2832); ctx.fill();
+          }
+          if (!reduced) rafId = requestAnimationFrame(frame);
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+
+      function setTheme(theme, save = true) {
+        root.dataset.theme = theme;
+        const dark = theme === 'dark';
+        themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        themeIcon.innerHTML = dark
+          ? '<path d="M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"/>'
+          : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#1f1d26' : '#e2dfeb');
+        if (save) { try { localStorage.setItem('cd-theme', theme); } catch (_) {} }
+      }
+
+      function renderCards(filter = 'all') {
+        const visible = articles.filter(article => filter === 'all' || article.category === filter);
+                if (!visible.length) {
+          postList.innerHTML = '<div class="empty-state">No writings in this category yet.</div>';
+          return;
+        }
+        postList.innerHTML = visible.map(article => `
+          <article class="post-card" aria-labelledby="title-${article.id}">
+            <div class="post-topline"><span class="post-category">${article.category}</span><span class="post-number">${article.number} / ${String(articles.length).padStart(2, '0')}</span></div>
+            <div class="post-copy">
+              <h3 class="post-title" id="title-${article.id}"><button type="button" data-open="${article.id}">${article.title}</button></h3>
+              <p class="post-excerpt">${article.excerpt}</p>
+            </div>
+            <div class="post-bottom">
+              <div class="post-meta"><span>${article.date}</span><span class="meta-dot" aria-hidden="true"></span><span>${article.minutes} min read</span></div>
+              <div class="post-actions">
+                <button class="read-button" type="button" data-open="${article.id}">Read essay ${icons.arrow}</button>
+                <button class="share-button" type="button" data-share="${article.id}" aria-label="Share ${article.title}" title="Share essay">${icons.share}</button>
+              </div>
+            </div>
+          </article>`).join('');
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('visible'), 2400);
+      }
+
+      function getArticleUrl(article) {
+        return `${window.location.href.split('#')[0]}#${article.id}`;
+      }
+
+      async function shareArticle(article) {
+        const url = getArticleUrl(article);
+        const payload = { title: `${article.title} | Chaturmukhi Darshan`, text: article.excerpt, url };
+        if (navigator.share) {
+          try { await navigator.share(payload); return; }
+          catch (error) { if (error && error.name === 'AbortError') return; }
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          showToast('Essay link copied');
+        } catch (_) {
+          const field = document.createElement('textarea');
+          field.value = url; field.setAttribute('readonly', '');
+          field.style.position = 'fixed'; field.style.opacity = '0';
+          document.body.appendChild(field); field.select();
+          const copied = document.execCommand('copy'); field.remove();
+          showToast(copied ? 'Essay link copied' : 'Copy this link: ' + url);
+        }
+      }
+
+      function openArticle(id, updateHash = true) {
+        const article = articles.find(item => item.id === id);
+        if (!article) return;
+        activeArticle = article;
+        document.getElementById('reader-category').textContent = article.category;
+        document.getElementById('reader-title').textContent = article.title;
+        document.getElementById('reader-deck').textContent = article.deck;
+        document.getElementById('reader-meta').textContent = `${article.date}  ·  ${article.minutes} min read`;
+        document.getElementById('reader-content').innerHTML = article.content;
+        document.body.classList.add('reading');
+        if (!dialog.open) dialog.showModal();
+        dialog.scrollTop = 0;
+        if (updateHash) history.replaceState(null, '', `#${article.id}`);
+      }
+
+      function closeArticle() {
+        if (dialog.open) dialog.close();
+        if (articles.some(article => article.id === location.hash.slice(1))) history.replaceState(null, '', location.pathname + location.search);
+        activeArticle = null;
+      }
+
+      themeToggle.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+      menuToggle.addEventListener('click', () => {
+        const isOpen = nav.classList.toggle('open');
+        menuToggle.setAttribute('aria-expanded', String(isOpen));
+        menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+      });
+      nav.addEventListener('click', event => {
+        if (event.target.closest('a')) {
+          nav.classList.remove('open');
+          menuToggle.setAttribute('aria-expanded', 'false');
+          menuToggle.setAttribute('aria-label', 'Open navigation menu');
+        }
+      });
+      postList.addEventListener('click', event => {
+        const openButton = event.target.closest('[data-open]');
+        if (openButton) { openArticle(openButton.dataset.open); return; }
+        const shareButton = event.target.closest('[data-share]');
+        if (shareButton) {
+          const article = articles.find(item => item.id === shareButton.dataset.share);
+          if (article) shareArticle(article);
+        }
+      });
+      document.getElementById('reader-share').addEventListener('click', () => { if (activeArticle) shareArticle(activeArticle); });
+      document.getElementById('close-reader').addEventListener('click', closeArticle);
+      dialog.addEventListener('close', () => {
+        document.body.classList.remove('reading');
+        if (articles.some(article => article.id === location.hash.slice(1))) history.replaceState(null, '', location.pathname + location.search);
+      });
+      window.addEventListener('hashchange', () => {
+        const id = location.hash.slice(1);
+        if (articles.some(article => article.id === id)) openArticle(id, false);
+      });
+      window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(makeDots, 250); });
+
+      let savedTheme = null;
+      try { savedTheme = localStorage.getItem('cd-theme'); } catch (_) {}
+      setTheme(savedTheme === 'dark' ? 'dark' : 'light', false);
+      makeDots();
+      renderCards();
+      document.getElementById('year').textContent = new Date().getFullYear();
+      const initialHash = location.hash.slice(1);
+      if (articles.some(article => article.id === initialHash)) openArticle(initialHash, false);
+    })();
+  </script>
+</body>
+</html>
