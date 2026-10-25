@@ -1,1 +1,508 @@
+name: Sync Notion articles
 
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sync Notion database to static HTML pages
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: node scripts/sync-notion.js
+
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Sync generated articles from Notion"
+          git push
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
+const DATABASE_ID = process.env.NOTION_DATABASE_ID;
+
+if (!NOTION_TOKEN || !DATABASE_ID) {
+  throw new Error('Missing NOTION_TOKEN or NOTION_DATABASE_ID environment variables.');
+}
+
+const rootDir = process.cwd();
+const postsDir = path.join(rootDir, 'posts');
+
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+const getTextFromProperty = (property) => {
+  if (!property) return '';
+  if (Array.isArray(property)) return property.map((item) => getTextFromProperty(item)).join(' ');
+  if (typeof property === 'string') return property;
+
+  if (property.type === 'title' || property.type === 'rich_text' || property.type === 'text') {
+    return property[property.type]?.map((item) => item.plain_text || '').join(' ') ?? '';
+  }
+
+  if (property.type === 'select') return property.select?.name ?? '';
+  if (property.type === 'date') return property.date?.start ?? '';
+  if (property.type === 'number') return String(property.number ?? '');
+  if (property.type === 'url') return property.url ?? '';
+  if (property.type === 'multi_select') return property.multi_select?.map((opt) => opt.name).join(', ') ?? '';
+  if (property.type === 'people') return property.people?.map((person) => person.name || person.id).join(', ') ?? '';
+  if (property.type === 'checkbox') return property.checkbox ? 'Yes' : 'No';
+
+  return '';
+};
+
+const getPropertyValue = (page, matchName) => {
+  const property = Object.values(page.properties || {}).find((item) => {
+    const name = item?.name || '';
+    return name.toLowerCase() === matchName.toLowerCase();
+  });
+  if (!property) return '';
+  return getTextFromProperty(property);
+};
+
+const getPageTitle = (page) => {
+  const title = Object.values(page.properties || {}).find((property) => property.type === 'title');
+  return getTextFromProperty(title) || 'Untitled Article';
+};
+
+const getPageDescription = (page) => {
+  return (
+    getPropertyValue(page, 'summary') ||
+    getPropertyValue(page, 'description') ||
+    getPropertyValue(page, 'excerpt') ||
+    'A reflection from Chaturmukhi Darshan.'
+  );
+};
+
+const getPageCategory = (page) => {
+  return getPropertyValue(page, 'category') || getPropertyValue(page, 'topic') || 'Essay';
+};
+
+const getPageDate = (page) => {
+  return getPropertyValue(page, 'date') || getPropertyValue(page, 'published') || new Date().toISOString().slice(0, 10);
+};
+
+const renderRichText = (texts = []) => texts.map((item) => {
+  const text = item.plain_text || '';
+  if (!text) return '';
+  if (item.href) {
+    return `<a href="${escapeHtml(item.href)}" target="_blank" rel="noreferrer noopener">${escapeHtml(text)}</a>`;
+  }
+  return escapeHtml(text);
+}).join('');
+
+const renderBlock = (block) => {
+  if (!block) return '';
+  const type = block.type;
+
+  switch (type) {
+    case 'paragraph':
+      return `<p>${renderRichText(block.paragraph.rich_text)}</p>`;
+    case 'heading_1':
+      return `<h2>${renderRichText(block.heading_1.rich_text)}</h2>`;
+    case 'heading_2':
+      return `<h3>${renderRichText(block.heading_2.rich_text)}</h3>`;
+    case 'heading_3':
+      return `<h4>${renderRichText(block.heading_3.rich_text)}</h4>`;
+    case 'quote':
+      return `<blockquote>${renderRichText(block.quote.rich_text)}</blockquote>`;
+    case 'divider':
+      return '<hr>';
+    case 'code':
+      return `<pre><code>${escapeHtml(block.code.rich_text.map((t) => t.plain_text).join('\n'))}</code></pre>`;
+    case 'callout':
+      return `<blockquote>${renderRichText(block.callout.rich_text)}</blockquote>`;
+    case 'bookmark':
+      return `<p><a href="${escapeHtml(block.bookmark.url)}" target="_blank" rel="noreferrer noopener">${escapeHtml(block.bookmark.url)}</a></p>`;
+    case 'bulleted_list_item':
+      return `<li>${renderRichText(block.bulleted_list_item.rich_text)}</li>`;
+    case 'numbered_list_item':
+      return `<li>${renderRichText(block.numbered_list_item.rich_text)}</li>`;
+    default:
+      return '';
+  }
+};
+
+const renderBlocks = (blocks = []) => {
+  let output = '';
+  let listType = null;
+  const listItems = [];
+
+  const flushList = () => {
+    if (!listItems.length) return '';
+    const tag = listType === 'numbered' ? 'ol' : 'ul';
+    const html = listItems.join('');
+    listItems.length = 0;
+    listType = null;
+    return `<${tag}>${html}</${tag}>`;
+  };
+
+  for (const block of blocks) {
+    const type = block.type;
+    if (type === 'bulleted_list_item' || type === 'numbered_list_item') {
+      const candidateType = type === 'bulleted_list_item' ? 'bulleted' : 'numbered';
+      if (listType && listType !== candidateType) {
+        output += flushList();
+      }
+      listType = candidateType;
+      listItems.push(renderBlock(block));
+      continue;
+    }
+
+    if (listItems.length) {
+      output += flushList();
+    }
+    output += renderBlock(block);
+  }
+
+  if (listItems.length) {
+    output += flushList();
+  }
+
+  return output;
+};
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${NOTION_TOKEN}`,
+      'Notion-Version': '2022-06-28',
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Notion API request failed (${response.status}): ${body}`);
+  }
+
+  return response.json();
+}
+
+async function getBlockChildren(blockId, cursor = null, collected = []) {
+  const url = new URL(`https://api.notion.com/v1/blocks/${blockId}/children`);
+  url.searchParams.set('page_size', '100');
+  if (cursor) url.searchParams.set('start_cursor', cursor);
+
+  const data = await fetchJson(url.toString());
+  collected.push(...data.results);
+
+  if (data.has_more) {
+    return getBlockChildren(blockId, data.next_cursor, collected);
+  }
+
+  return collected;
+}
+
+const slugify = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const articleTemplate = `<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e2dfeb">
+  <meta name="description" content="{{ARTICLE_DESCRIPTION}}">
+  <title>{{ARTICLE_TITLE}} | Chaturmukhi Darshan</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #e2dfeb;
+      --surface: #f2f1f5;
+      --surface-raised: rgba(247, 245, 252, .56);
+      --surface-soft: #dcdae2;
+      --text: #2b2a30;
+      --muted: #5f5d68;
+      --faint: #77747f;
+      --border: rgba(80, 78, 92, .16);
+      --border-strong: rgba(80, 78, 92, .27);
+      --accent: #5a5864;
+      --accent-soft: #d5d3dc;
+      --focus: #5f5c70;
+      --shadow: 0 12px 38px rgba(40, 38, 50, .07);
+      --dot-opacity: 1;
+      --neb-glow: rgba(255, 255, 255, .78);
+      --neb-mid: rgba(168, 160, 192, .55);
+      --neb-deep: rgba(132, 124, 160, .58);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #1f1d26;
+      --surface: #2e2c32;
+      --surface-raised: rgba(44, 41, 54, .50);
+      --surface-soft: #38363e;
+      --text: #e7e5eb;
+      --muted: #c0bdc9;
+      --faint: #a3a0ad;
+      --border: rgba(224, 221, 234, .13);
+      --border-strong: rgba(224, 221, 234, .24);
+      --accent: #cfccda;
+      --accent-soft: #46434e;
+      --focus: #cfcbe0;
+      --shadow: 0 16px 46px rgba(8, 7, 10, .22);
+      --dot-opacity: 1;
+      --neb-glow: rgba(128, 118, 160, .42);
+      --neb-mid: rgba(84, 76, 110, .50);
+      --neb-deep: rgba(8, 7, 14, .66);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Times New Roman", Times, serif;
+      line-height: 1.7;
+      transition: background-color .35s ease, color .35s ease;
+    }
+    body, button, input { font-family: "Times New Roman", Times, serif; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+    ::selection { background: var(--accent-soft); color: var(--text); }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 62% 42% at 94% 6%, var(--neb-glow), transparent 72%),
+        radial-gradient(ellipse 52% 38% at 84% 52%, var(--neb-mid), transparent 74%),
+        radial-gradient(ellipse 46% 34% at 52% 18%, var(--neb-mid), transparent 76%),
+        radial-gradient(ellipse 48% 36% at 12% 32%, var(--neb-deep), transparent 74%),
+        radial-gradient(ellipse 56% 38% at 30% 82%, var(--neb-deep), transparent 74%),
+        radial-gradient(ellipse 40% 30% at 92% 92%, var(--neb-mid), transparent 74%);
+      transition: opacity .35s ease;
+    }
+    #floating-dots {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      contain: strict;
+      opacity: var(--dot-opacity);
+      transition: opacity .35s ease;
+    }
+    #floating-dots canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .site-shell { position: relative; z-index: 1; }
+    .wrap { width: min(100% - 32px, 860px); margin-inline: auto; }
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .header-inner { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { text-decoration: none; display: inline-flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 42px; height: 42px;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 21px;
+      font-weight: 700;
+    }
+    .brand-name { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 900; letter-spacing: -.03em; }
+    .nav { display: flex; align-items: center; gap: 6px; }
+    .nav a { text-decoration: none; color: var(--muted); padding: 8px 12px; border-radius: 999px; }
+    .nav a:hover { background: var(--surface-soft); color: var(--text); }
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface-raised);
+      cursor: pointer;
+      color: var(--text);
+    }
+    .icon-button svg { width: 18px; height: 18px; }
+    main { padding: 42px 0 56px; }
+    .article-shell {
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: clamp(24px, 4vw, 46px);
+    }
+    .eyebrow { margin: 0 0 14px; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0 0 12px; font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.03em; }
+    .deck { margin: 0 0 24px; color: var(--muted); font-size: clamp(1.1rem, 1.5vw, 1.4rem); line-height: 1.6; font-style: italic; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--faint); font-size: .8rem; margin-bottom: 30px; }
+    .article-content { font-size: clamp(1.1rem, 1.3vw, 1.28rem); line-height: 1.9; }
+    .article-content p { margin: 0 0 1.2em; }
+    .article-content h2, .article-content h3, .article-content h4 { margin: 1.5em 0 0.7em; line-height: 1.2; }
+    .article-content blockquote { margin: 1.5em 0; padding-left: 20px; border-left: 2px solid var(--border-strong); color: var(--muted); font-style: italic; }
+    .article-content pre { overflow-x: auto; background: rgba(0,0,0,.03); padding: 16px; border-radius: 12px; }
+    .back-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 28px; padding: 12px 16px; border: 1px solid var(--border-strong); border-radius: 999px; text-decoration: none; background: var(--surface-soft); color: var(--text); }
+    footer { margin-top: 30px; padding: 18px 0 26px; border-top: 1px solid var(--border); }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .footer-note { color: var(--faint); font-size: .82rem; }
+    .footer-links a { color: var(--faint); text-decoration: none; }
+    .footer-links a:hover { color: var(--text); }
+    @media (max-width: 520px) { .wrap { width: min(100% - 22px, 860px); } .brand-name { font-size: 1.35rem; } .article-shell { padding: 20px 18px; border-radius: 20px; } .nav { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="floating-dots" aria-hidden="true"></div>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="../index.html" aria-label="Back to Chaturmukhi Darshan home">
+          <span class="brand-mark" aria-hidden="true">च</span>
+          <span class="brand-name">Chaturmukhi Darshan</span>
+        </a>
+        <div class="nav" aria-label="Page navigation">
+          <a href="../index.html">Home</a>
+        </div>
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch theme">
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <article class="article-shell">
+        <p class="eyebrow">Essay</p>
+        <h1>{{ARTICLE_TITLE}}</h1>
+        <p class="deck">{{ARTICLE_DECK}}</p>
+        <div class="meta">
+          <span>{{ARTICLE_DATE}}</span>
+          <span>•</span>
+          <span>{{ARTICLE_MINUTES}}</span>
+        </div>
+
+        <div class="article-content">
+          {{ARTICLE_CONTENT}}
+        </div>
+
+        <a class="back-link" href="../index.html">← Back to homepage</a>
+      </article>
+    </main>
+
+    <footer>
+      <div class="wrap footer-inner">
+        <div class="footer-note">Chaturmukhi Darshan</div>
+        <div class="footer-links"><a href="../index.html">Home</a></div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const dotField = document.getElementById('floating-dots');
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = document.getElementById('theme-icon');
+      let rafId = 0;
+      function setTheme(theme) {
+        root.dataset.theme = theme;
+        const dark = theme === 'dark';
+        themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        themeIcon.innerHTML = dark
+          ? '<path d=\"M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z\"/>'
+          : '<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42\"/>';
+        document.querySelector('meta[name=\"theme-color\"]').setAttribute('content', dark ? '#1f1d26' : '#e2dfeb');
+      }
+      function makeDots() {
+        cancelAnimationFrame(rafId);
+        dotField.replaceChildren();
+        const canvas = document.createElement('canvas');
+        dotField.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const W = window.innerWidth, H = window.innerHeight;
+        canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+        ctx.scale(dpr, dpr);
+        const count = Math.round(Math.min(500, Math.max(120, (W * H) / 1400)));
+        const stars = [];
+        for (let i = 0; i < count; i++) {
+          const r = Math.random();
+          const size = r < 0.72 ? 0.5 + Math.random() * 0.7 : r < 0.95 ? 1.2 + Math.random() * 0.8 : 2 + Math.random() * 1.3;
+          stars.push({ x: Math.random() * W, y: Math.random() * H, size, big: size > 1.9, tint: Math.random(), vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 3.5, base: 0.4 + Math.random() * 0.55, speed: 0.25 + Math.random() * 0.6, phase: Math.random() * 6.28 });
+        }
+        function color(star, dark) { if (dark) return star.tint < 0.4 ? '196,170,245' : star.tint < 0.75 ? '176,148,235' : '214,190,250'; return star.tint < 0.4 ? '104,70,172' : star.tint < 0.75 ? '124,90,190' : '88,56,150'; }
+        let last = performance.now();
+        function frame(now) {
+          const dt = Math.min((now - last) / 1000, 0.05); last = now;
+          const dark = root.dataset.theme === 'dark';
+          ctx.clearRect(0, 0, W, H);
+          for (const st of stars) {
+            if (!reduced) {
+              st.x += st.vx * dt; st.y += st.vy * dt;
+              if (st.x < -4) st.x = W + 4; else if (st.x > W + 4) st.x = -4;
+              if (st.y < -4) st.y = H + 4; else if (st.y > H + 4) st.y = -4;
+            }
+            const tw = reduced ? 1 : 0.72 + 0.28 * Math.sin(now / 1000 * st.speed + st.phase);
+            const a = Math.min(1, st.base * tw);
+            const c = color(st, dark);
+            if (st.big) {
+              const g = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.size * 4);
+              g.addColorStop(0, `rgba(${c},${a})`);
+              g.addColorStop(1, `rgba(${c},0)`);
+              ctx.fillStyle = g;
+              ctx.beginPath(); ctx.arc(st.x, st.y, st.size * 4, 0, 6.2832); ctx.fill();
+            }
+            ctx.fillStyle = `rgba(${c},${a})`;
+            ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, 6.2832); ctx.fill();
+          }
+          if (!reduced) rafId = requestAnimationFrame(frame);
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+      themeToggle.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+      let savedTheme = null;
+      try { savedTheme = localStorage.getItem('cd-theme'); } catch (_) {}
+      setTheme(savedTheme === 'dark' ? 'dark' : 'light');
+      makeDots();
+    })();
+  </script>
+</body>
+</html>`;
+
+const generateArticleFile = async (article) => {
+  const pageHtml = articleTemplate
+    .replace(/\{\{ARTICLE_TITLE\}\}/g, escapeHtml(article.title))
+    .replace(/\{\{ARTICLE_DESCRIPTION\}\}/g, escapeHtml(article.description))
+    .replace(/\{\{ARTICLE_DECK\}\}/g, escapeHtml(arti
